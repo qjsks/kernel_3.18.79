@@ -62,11 +62,17 @@ jobs:
           export LC_ALL=C
           echo "=== 交叉编译器 ==="
           ${CC_PREFIX}gcc --version | head -1
+          echo "=== 验证 armv7-a 支持 ==="
+          echo 'int main(){return 0;}' > /tmp/t.c
+          ${CC_PREFIX}gcc -march=armv7-a -c /tmp/t.c -o /tmp/t.o && echo "armv7-a OK" || echo "armv7-a FAIL"
           echo "=== defconfig ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX bb06_defconfig
+          echo "=== 确认 CPU_V7 已启用 ==="
+          grep -E "CONFIG_CPU_V7|CONFIG_CPU_32v7" .config || echo "  CPU_V7 未启用！"
           echo "=== 编译 ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
                HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
+               KCFLAGS="-march=armv7-a -mtune=cortex-a7" \
                zImage 2>&1 | tail -80
 
       - name: Package
