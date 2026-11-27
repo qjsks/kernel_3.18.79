@@ -72,7 +72,7 @@ jobs:
           echo "=== 编译 ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
                HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
-               KCFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=hard -mtune=cortex-a7" \
+               KCFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=softfp -mtune=cortex-a7" \
                zImage 2>&1 | tail -80
 
       - name: Package
