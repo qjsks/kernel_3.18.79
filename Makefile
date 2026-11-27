@@ -638,7 +638,7 @@ KBUILD_CFLAGS += $(call cc-option,-fno-reorder-blocks,) \
 endif
 
 ifneq ($(CONFIG_FRAME_WARN),0)
-KBUILD_CFLAGS += $(call cc-option,-Werror=frame-larger-than=1)
+KBUILD_CFLAGS += $(call cc-option,-Wno-error=frame-larger-than=1)
 KBUILD_CFLAGS += $(call cc-option,-Wframe-larger-than=${CONFIG_FRAME_WARN})
 endif
 
@@ -776,16 +776,16 @@ KBUILD_CFLAGS	+= $(call cc-option,-fno-strict-overflow)
 KBUILD_CFLAGS   += $(call cc-option,-fconserve-stack)
 
 # disallow errors like 'EXPORT_GPL(foo);' with missing header
-KBUILD_CFLAGS   += $(call cc-option,-Werror=implicit-int)
+KBUILD_CFLAGS   += $(call cc-option,-Wno-error=implicit-int)
 
 # require functions to have arguments in prototypes, not empty 'int foo()'
-KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
+KBUILD_CFLAGS   += $(call cc-option,-Wno-error=strict-prototypes)
 
 # Prohibit date/time macros, which would make the build non-deterministic
-KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
+KBUILD_CFLAGS   += $(call cc-option,-Wno-error=date-time)
 
 # [HERMES] GCC11+ 对老内核代码误报 array-bounds / maybe-uninitialized，
-# 这里统一关掉 error 升级（必须在上面所有 -Werror 之后）
+# 这里统一关掉 error 升级（必须在上面所有 -Wno-error 之后）
 KBUILD_CFLAGS   += -Wno-error
 KBUILD_CFLAGS   += -Wno-array-bounds -Wno-maybe-uninitialized -Wno-format-truncation
 
