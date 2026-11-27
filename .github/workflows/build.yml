@@ -1,0 +1,69 @@
+name: Build MT6580 Kernel
+
+on:
+  push:
+    branches: [ master, main ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 120
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 1
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq \
+            build-essential bc bison flex libssl-dev libncurses5-dev \
+            gcc-arm-linux-gnueabihf device-tree-compiler zip python3
+
+      - name: Setup toolchain
+        run: |
+          # 3.18.79 内核用 gcc 6.x 最稳，装 Linaro 6.3
+          mkdir -p $HOME/tc
+          cd $HOME/tc
+          curl -sSL -o tc.tar.xz "https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/arm-eabi/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" || \
+          curl -sSL -o tc.tar.xz "https://github.com/obraxys/kernel_3.18.79/releases/download/tc/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" || \
+          echo "Linaro 下载失败，回退到 apt 的 gcc-arm-linux-gnueabihf"
+          if [ -f tc.tar.xz ] && [ $(stat -c%s tc.tar.xz) -gt 50000000 ]; then
+            tar -xf tc.tar.xz
+            ls -d gcc-linaro-* 2>/dev/null
+            echo "TC_PATH=$HOME/tc/$(ls -d gcc-linaro-* | head -1)/bin" >> $GITHUB_ENV
+            echo "CC_PREFIX=arm-eabi-" >> $GITHUB_ENV
+          else
+            echo "TC_PATH=/usr/bin" >> $GITHUB_ENV
+            echo "CC_PREFIX=arm-linux-gnueabihf-" >> $GITHUB_ENV
+          fi
+
+      - name: Build kernel
+        run: |
+          export PATH=$TC_PATH:$PATH
+          export ARCH=arm
+          export CROSS_COMPILE=$CC_PREFIX
+          export LC_ALL=C
+          make ARCH=arm CROSS_COMPILE=$CC_PREFIX bb06_defconfig
+          make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) zImage 2>&1 | tail -80
+
+      - name: Package
+        if: success()
+        run: |
+          mkdir -p out
+          cp arch/arm/boot/zImage out/ 2>/dev/null || echo "zImage not found"
+          ls -la arch/arm/boot/
+          find . -name "zImage" -o -name "Image" -o -name "Image.gz" 2>/dev/null | head -5
+          cp -v $(find . -name "zImage" -o -name "Image.gz" | head -1) out/ 2>/dev/null || true
+          cd out && ls -la && zip -r kernel-bb06.zip . 2>/dev/null || true
+
+      - name: Upload artifact
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: kernel-bb06
+          path: out/
+          retention-days: 30

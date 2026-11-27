@@ -750,7 +750,10 @@ static void tpd_down(int x, int y,int press, int id)
 	
 	input_report_abs(tpd->dev, ABS_MT_POSITION_X, x);
 	input_report_abs(tpd->dev, ABS_MT_POSITION_Y, y);	
-	input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 显式 slot + tracking id */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, 0);
+	input_sync(tpd->dev);
     	TPD_DEBUG_SET_TIME;
 	TPD_EM_PRINT(x, y, x, y, id, 1);
    	 tpd_history_x=x;
@@ -780,7 +783,10 @@ static void tpd_down(int x, int y, int p)
 	//printk("tpd:D[%4d %4d %4d] ", x, y, p);
 	// track id Start 0
      	//input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, p); 
-	input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 显式 slot + tracking id */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, 0);
+	input_sync(tpd->dev);
      	if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
      	{   
        	tpd_button(x, y, 1);  
@@ -810,7 +816,10 @@ static void tpd_down(int x, int y, int p) {
 	//printk("tpd:D[%4d %4d %4d] ", x, y, p);
 	/* track id Start 0 */
      	//input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, p); 
-	input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 显式 slot + tracking id */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, 0);
+	input_sync(tpd->dev);
      	if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
      	{   
        	tpd_button(x, y, 1);  
@@ -837,7 +846,10 @@ static  void tpd_up(int x, int y,int id)
 {	 
 	 input_report_key(tpd->dev, BTN_TOUCH, 0);
 	 //printk("U[%4d %4d %4d] ", x, y, 0);
-	 input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 抬起该 slot */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, -1);
+	input_sync(tpd->dev);
 	TPD_DEBUG_SET_TIME;
 	 TPD_EM_PRINT(tpd_history_x, tpd_history_y, tpd_history_x, tpd_history_y, id, 0);
 	tpd_history_x=0;
@@ -855,7 +867,10 @@ static  void tpd_up(int x, int y,int *count)
 	 
 	 input_report_key(tpd->dev, BTN_TOUCH, 0);
 	 //printk("U[%4d %4d %4d] ", x, y, 0);
-	 input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 抬起该 slot */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, -1);
+	input_sync(tpd->dev);
 	 TPD_EM_PRINT(x, y, x, y, 0, 0);
 
 	if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())
@@ -870,7 +885,10 @@ static  void tpd_up(int x, int y,int *count)
 {
 	 input_report_key(tpd->dev, BTN_TOUCH, 0);
 	 //printk("U[%4d %4d %4d] ", x, y, 0);
-	 input_mt_sync(tpd->dev);
+	/* [HERMES] 协议B: 抬起该 slot */
+	input_mt_slot(tpd->dev, 0);
+	input_report_abs(tpd->dev, ABS_MT_TRACKING_ID, -1);
+	input_sync(tpd->dev);
 	 TPD_EM_PRINT(x, y, x, y, 0, 0);
 
 	if (FACTORY_BOOT == get_boot_mode()|| RECOVERY_BOOT == get_boot_mode())

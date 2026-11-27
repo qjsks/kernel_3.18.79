@@ -149,8 +149,8 @@
 #define POINT_READ_BUF						(3 + FTS_TOUCH_STEP * CFG_MAX_TOUCH_POINTS)
 #define FT_FW_NAME_MAX_LEN				50
 #define TPD_DELAY                					(2*HZ/100)
-#define TPD_RES_X                					480//1080//480
-#define TPD_RES_Y                					854//1280//800
+#define TPD_RES_X                				200   /* [HERMES] BB06 屏宽 200，IC 实际报 0~199 */
+#define TPD_RES_Y                				900   /* [HERMES] IC 实际能报到 900，Android 自动缩放到屏高 480 */
 #define TPD_CALIBRATION_MATRIX  			{962,0,0,0,1600,0,0,0};
 #define FT_PROXIMITY_ENABLE				0
 //#define TPD_AUTO_UPGRADE

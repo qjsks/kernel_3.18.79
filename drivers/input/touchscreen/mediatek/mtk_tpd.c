@@ -591,6 +591,8 @@ static int tpd_probe(struct platform_device *pdev)
 #else
 		input_set_abs_params(tpd->dev, ABS_MT_TOUCH_MAJOR, 0, 100, 0, 0);
 		input_set_abs_params(tpd->dev, ABS_MT_TOUCH_MINOR, 0, 100, 0, 0);
+		/* [HERMES] 所有触摸 IC 都初始化多指 slot，让 Android 8+ 拿到 ABS_MT_SLOT */
+		input_mt_init_slots(tpd->dev, 10, 0);
 #endif /* CONFIG_MTK_S3320 */
 		TPD_DMESG("Cap touch panel driver\n");
 	}
