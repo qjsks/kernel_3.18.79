@@ -21,49 +21,74 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             build-essential bc bison flex libssl-dev libncurses5-dev \
-            gcc-arm-linux-gnueabihf device-tree-compiler zip python3
+            libelf-dev zip python3 \
+            gcc-8 g++-8 device-tree-compiler
+
+      - name: Setup host gcc-8
+        run: |
+          # 3.18 内核的 host 工具（dtc 等）必须用老 gcc，GCC11+ 会因 -fno-common 链接失败
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 || true
+          sudo update-alternatives --set gcc /usr/bin/gcc-8 || true
+          gcc --version | head -1
 
       - name: Setup toolchain
         run: |
-          # 3.18.79 内核用 gcc 6.x 最稳，装 Linaro 6.3
           mkdir -p $HOME/tc
           cd $HOME/tc
-          curl -sSL -o tc.tar.xz "https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/arm-eabi/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" || \
-          curl -sSL -o tc.tar.xz "https://github.com/obraxys/kernel_3.18.79/releases/download/tc/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" || \
-          echo "Linaro 下载失败，回退到 apt 的 gcc-arm-linux-gnueabihf"
-          if [ -f tc.tar.xz ] && [ $(stat -c%s tc.tar.xz) -gt 50000000 ]; then
+          OK=0
+          for URL in \
+            "https://releases.linaro.org/components/toolchain/binaries/6.3-2017.05/arm-eabi/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" \
+            "https://mirrors.tuna.tsinghua.edu.cn/armbian-releases/_toolchains/gcc-linaro-6.3.1-2017.05-x86_64_arm-eabi.tar.xz" ; do
+            echo "try $URL"
+            curl -sSL -m 300 -o tc.tar.xz "$URL" || continue
+            SZ=$(stat -c%s tc.tar.xz 2>/dev/null || echo 0)
+            echo "size=$SZ"
+            if [ "$SZ" -gt 50000000 ]; then OK=1; break; fi
+          done
+          if [ "$OK" = "1" ]; then
             tar -xf tc.tar.xz
-            ls -d gcc-linaro-* 2>/dev/null
-            echo "TC_PATH=$HOME/tc/$(ls -d gcc-linaro-* | head -1)/bin" >> $GITHUB_ENV
+            TC=$(ls -d gcc-linaro-*/bin 2>/dev/null | head -1)
+            echo "TC_PATH=$HOME/tc/$TC" >> $GITHUB_ENV
             echo "CC_PREFIX=arm-eabi-" >> $GITHUB_ENV
+            echo "Linaro 6.3 OK"
           else
+            sudo apt-get install -y -qq gcc-arm-linux-gnueabihf
             echo "TC_PATH=/usr/bin" >> $GITHUB_ENV
             echo "CC_PREFIX=arm-linux-gnueabihf-" >> $GITHUB_ENV
+            echo "回退 apt 交叉编译器"
           fi
 
       - name: Build kernel
         run: |
           export PATH=$TC_PATH:$PATH
-          export ARCH=arm
-          export CROSS_COMPILE=$CC_PREFIX
           export LC_ALL=C
+          echo "=== 交叉编译器 ==="
+          ${CC_PREFIX}gcc --version | head -1
+          echo "=== defconfig ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX bb06_defconfig
-          make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) zImage 2>&1 | tail -80
+          echo "=== 编译 ==="
+          make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
+               HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
+               zImage 2>&1 | tail -80
 
       - name: Package
-        if: success()
+        if: always()
         run: |
           mkdir -p out
-          cp arch/arm/boot/zImage out/ 2>/dev/null || echo "zImage not found"
-          ls -la arch/arm/boot/
-          find . -name "zImage" -o -name "Image" -o -name "Image.gz" 2>/dev/null | head -5
-          cp -v $(find . -name "zImage" -o -name "Image.gz" | head -1) out/ 2>/dev/null || true
-          cd out && ls -la && zip -r kernel-bb06.zip . 2>/dev/null || true
+          if [ -f arch/arm/boot/zImage ]; then
+            cp arch/arm/boot/zImage out/
+            echo "zImage: $(stat -c%s arch/arm/boot/zImage) bytes"
+          else
+            echo "zImage NOT built"
+            find . -name "zImage" -o -name "Image.gz" 2>/dev/null | head -5
+          fi
+          ls -la out/ || true
 
       - name: Upload artifact
-        if: success()
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: kernel-bb06
           path: out/
+          if-no-files-found: warn
           retention-days: 30
