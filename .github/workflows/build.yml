@@ -21,15 +21,13 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             build-essential bc bison flex libssl-dev libncurses5-dev \
-            libelf-dev zip python3 \
-            gcc-8 g++-8 device-tree-compiler
+            libelf-dev zip python3 device-tree-compiler gcc-arm-linux-gnueabihf
 
-      - name: Setup host gcc-8
+      - name: Show host gcc
         run: |
-          # 3.18 内核的 host 工具（dtc 等）必须用老 gcc，GCC11+ 会因 -fno-common 链接失败
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-8 60 --slave /usr/bin/g++ g++ /usr/bin/g++-8 || true
-          sudo update-alternatives --set gcc /usr/bin/gcc-8 || true
           gcc --version | head -1
+          # 关键：GCC10+ 的 -fno-common 会让老内核 host 工具（dtc 等）链接失败，
+          # 编译时用 HOSTCFLAGS="-fcommon" 修掉，不需要降级 gcc
 
       - name: Setup toolchain
         run: |
