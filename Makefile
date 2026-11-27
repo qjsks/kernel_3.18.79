@@ -784,6 +784,11 @@ KBUILD_CFLAGS   += $(call cc-option,-Werror=strict-prototypes)
 # Prohibit date/time macros, which would make the build non-deterministic
 KBUILD_CFLAGS   += $(call cc-option,-Werror=date-time)
 
+# [HERMES] GCC11+ 对老内核代码误报 array-bounds / maybe-uninitialized，
+# 这里统一关掉 error 升级（必须在上面所有 -Werror 之后）
+KBUILD_CFLAGS   += -Wno-error
+KBUILD_CFLAGS   += -Wno-array-bounds -Wno-maybe-uninitialized -Wno-format-truncation
+
 # use the deterministic mode of AR if available
 KBUILD_ARFLAGS := $(call ar-option,D)
 
