@@ -21,7 +21,8 @@ jobs:
           sudo apt-get update -qq
           sudo apt-get install -y -qq \
             build-essential bc bison flex libssl-dev libncurses5-dev \
-            libelf-dev zip python3 device-tree-compiler gcc-arm-linux-gnueabihf
+            libelf-dev zip python3 device-tree-compiler \
+            gcc-arm-linux-gnueabi
 
       - name: Show host gcc
         run: |
@@ -50,10 +51,10 @@ jobs:
             echo "CC_PREFIX=arm-eabi-" >> $GITHUB_ENV
             echo "Linaro 6.3 OK"
           else
-            sudo apt-get install -y -qq gcc-arm-linux-gnueabihf
+            sudo apt-get install -y -qq gcc-arm-linux-gnueabi
             echo "TC_PATH=/usr/bin" >> $GITHUB_ENV
-            echo "CC_PREFIX=arm-linux-gnueabihf-" >> $GITHUB_ENV
-            echo "回退 apt 交叉编译器"
+            echo "CC_PREFIX=arm-linux-gnueabi-" >> $GITHUB_ENV
+            echo "回退 apt 交叉编译器（soft-float）"
           fi
 
       - name: Build kernel
@@ -72,7 +73,7 @@ jobs:
           echo "=== 编译 ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
                HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
-               KCFLAGS="-march=armv7-a -mfpu=neon-vfpv4 -mfloat-abi=softfp -mtune=cortex-a7" \
+               KCFLAGS="-mtune=cortex-a7" \
                zImage 2>&1 | tail -80
 
       - name: Package
