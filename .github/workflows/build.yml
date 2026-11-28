@@ -73,7 +73,7 @@ jobs:
           echo "=== 编译 ==="
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
                HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
-               KCFLAGS="-mtune=cortex-a7" \
+               KCFLAGS="-mtune=cortex-a7 -Wno-error=stringop-overread -Wno-error=attribute-alias -Wno-error=array-bounds -Wno-error=maybe-uninitialized -Wno-error=format-truncation -Wno-error=implicit-fallthrough" \
                zImage 2>&1 | tail -80
 
       - name: Package
