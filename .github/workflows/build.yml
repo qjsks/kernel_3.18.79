@@ -82,10 +82,14 @@ jobs:
           echo "=== 最后 60 行 ==="
           tail -60 /tmp/build.log
           if [ $RC -ne 0 ]; then
-            echo "=== 错误行 ==="
-            grep -nE "error:|Error [0-9]|make\[[0-9]+\]: \*\*\*" /tmp/build.log | tail -20
+            echo "=== 全部 error 行 ==="
+            grep -nE "error:|Error [0-9]" /tmp/build.log | head -40
+            echo "=== error 上下文 ==="
+            grep -A12 -m3 "error:" /tmp/build.log | head -50
             exit $RC
           fi
+          echo "=== 编译成功 ==="
+          ls -la arch/arm/boot/zImage
 
       - name: Package
         if: always()
