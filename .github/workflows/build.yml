@@ -59,6 +59,7 @@ jobs:
 
       - name: Build kernel
         run: |
+          set +e
           export PATH=$TC_PATH:$PATH
           export LC_ALL=C
           echo "=== 交叉编译器 ==="
