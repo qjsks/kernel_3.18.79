@@ -71,10 +71,20 @@ jobs:
           echo "=== 确认 CPU_V7 已启用 ==="
           grep -E "CONFIG_CPU_V7|CONFIG_CPU_32v7" .config || echo "  CPU_V7 未启用！"
           echo "=== 编译 ==="
+          set -o pipefail
           make ARCH=arm CROSS_COMPILE=$CC_PREFIX -j$(nproc) \
                HOSTCFLAGS="-fcommon -w" HOSTCXXFLAGS="-fcommon -w" \
                KCFLAGS="-mtune=cortex-a7 -Wno-error=stringop-overread -Wno-error=attribute-alias -Wno-error=array-bounds -Wno-error=maybe-uninitialized -Wno-error=format-truncation -Wno-error=implicit-fallthrough" \
-               zImage 2>&1 | tail -80
+               zImage > /tmp/build.log 2>&1
+          RC=$?
+          echo "make rc=$RC"
+          echo "=== 最后 60 行 ==="
+          tail -60 /tmp/build.log
+          if [ $RC -ne 0 ]; then
+            echo "=== 错误行 ==="
+            grep -nE "error:|Error [0-9]|make\[[0-9]+\]: \*\*\*" /tmp/build.log | tail -20
+            exit $RC
+          fi
 
       - name: Package
         if: always()
